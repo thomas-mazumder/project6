@@ -22,7 +22,7 @@ class BaseRegressor():
     
     def loss_function(self, y_true, y_pred):
         pass
-    
+ 
     def make_prediction(self, X):
         pass
     
@@ -41,7 +41,7 @@ class BaseRegressor():
             np.random.shuffle(shuffle_arr)
             X_train = shuffle_arr[:, :-1]
             y_train = shuffle_arr[:, -1].flatten()
-            num_batches = int(X_train.shape[0]/self.batch_size) + 1
+            num_batches = int(np.ceil(X_train.shape[0]/self.batch_size))
             X_batch = np.array_split(X_train, num_batches)
             y_batch = np.array_split(y_train, num_batches)
             # Generating list to save the param updates per batch
@@ -94,10 +94,10 @@ class BaseRegressor():
 class LogisticRegression(BaseRegressor):
     def __init__(self, num_feats, learning_rate=0.1, tol=0.0001, max_iter=100, batch_size=12):
         super().__init__(num_feats, learning_rate, tol, max_iter, batch_size)
-        
+
     def calculate_gradient(self, X, y) -> np.ndarray:
         """
-        TODO: write function to calculate gradient of the
+        DONE: write function to calculate gradient of the
         logistic loss function to update the weights 
 
         Params:
@@ -107,11 +107,18 @@ class LogisticRegression(BaseRegressor):
         Returns: 
             gradients for given loss function (np.ndarray)
         """
-        pass
+        y_hat = self.make_prediction(X)
+        n_examples = X.shape[0]
+        # expand the vector y_hat - y so that it can be multiplied element-wise with X
+        diff = np.repeat(y_hat - y, self.num_feats + 1)
+        diff = diff.reshape((n_examples, self.num_feats + 1))
+        grad = diff * X
+        grad = np.mean(grad, axis = 0)
+        return grad
     
     def loss_function(self, X, y) -> float:
         """
-        TODO: get y_pred from input X and implement binary cross 
+        DONE: get y_pred from input X and implement binary cross 
         entropy loss function. Binary cross entropy loss assumes that 
         the classification is either 1 or 0, not continuous, making
         it more suited for (binary) classification.
@@ -123,11 +130,17 @@ class LogisticRegression(BaseRegressor):
         Returns: 
             average loss 
         """
-        pass
+        y_hat = self.make_prediction(X)
+        # change 0 to 0.0001 and 1.0 to 0.9999 to avoid log(0) error
+        y_hat[y_hat == 0] = 0.0001
+        y_hat[y_hat == 1] = 0.9999
+        term1 = y * np.log(y_hat)
+        term2 = (1 - y) * np.log(1 - y_hat)
+        return -np.mean(term1 + term2)
     
     def make_prediction(self, X) -> np.array:
         """
-        TODO: implement logistic function to get estimates (y_pred) for input
+        DONE: implement logistic function to get estimates (y_pred) for input
         X values. The logistic function is a transformation of the linear model W.T(X)+b 
         into an "S-shaped" curve that can be used for binary classification
 
@@ -137,9 +150,8 @@ class LogisticRegression(BaseRegressor):
         Returns: 
             y_pred for given X
         """
-
-        pass
-
+        prod = np.dot(X, self.W)
+        return 1/(1 + np.exp(-prod))
 
 
     
